@@ -12,7 +12,6 @@
         body { font-family: 'Noto Sans TC', sans-serif; background-color: #f3f4f6; }
         .glass-card { background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px); border-radius: 1rem; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); }
         .nav-btn.active { background-color: #4f46e5; color: white; }
-        /* 低庫存警示樣式：少於 3 件觸發 */
         .low-stock-card { border: 2px solid #fee2e2 !important; background-color: #fffafb !important; }
         .low-stock-text { color: #dc2626 !important; font-weight: 900 !important; }
         .location-header { border-left: 4px solid #10b981; padding-left: 0.75rem; margin-top: 1.5rem; margin-bottom: 0.75rem; }
@@ -41,8 +40,11 @@
                 <div class="lg:col-span-1 glass-card p-6 h-fit">
                     <h2 class="text-xl font-semibold mb-4">新增支出</h2>
                     <form id="expenseForm" class="space-y-4">
-                        <input type="date" id="expDate" required class="w-full p-2 border rounded-md">
-                        <input type="number" id="amount" required step="0.1" class="w-full p-2 border rounded-md" placeholder="金額 (HKD)">
+                        <div class="space-y-1">
+                            <label class="text-xs text-gray-400 ml-1">日期 (日/月/年)</label>
+                            <input type="date" id="expDate" required class="w-full p-2 border rounded-md focus:ring-2 focus:ring-indigo-200 outline-none">
+                        </div>
+                        <input type="number" id="amount" required step="0.1" class="w-full p-2 border rounded-md focus:ring-2 focus:ring-indigo-200 outline-none" placeholder="金額 (HKD)">
                         <select id="member" class="w-full p-2 border rounded-md">
                             <option value="A子">👤 A子</option>
                             <option value="B子">👤 B子</option>
@@ -55,7 +57,7 @@
                             <option value="其他">✨ 其他</option>
                         </select>
                         <input type="text" id="note" class="w-full p-2 border rounded-md" placeholder="備註">
-                        <button type="submit" class="w-full bg-indigo-600 text-white py-2 rounded-md hover:bg-indigo-700 transition">紀錄支出</button>
+                        <button type="submit" class="w-full bg-indigo-600 text-white py-2 rounded-md hover:bg-indigo-700 transition font-bold">紀錄支出</button>
                     </form>
                 </div>
 
@@ -63,9 +65,7 @@
                 <div class="lg:col-span-2 space-y-6">
                     <!-- 月份選擇器 -->
                     <div class="glass-card p-4 overflow-x-auto">
-                        <div class="flex items-center gap-2" id="monthSelector">
-                            <!-- 由 JS 動態生成月份按鈕 -->
-                        </div>
+                        <div class="flex items-center gap-2" id="monthSelector"></div>
                     </div>
 
                     <!-- 總額概覽 -->
@@ -74,9 +74,7 @@
                         <div class="w-full md:w-1/2 text-center md:text-left">
                             <p id="selectedMonthTitle" class="text-sm text-gray-500 font-bold">本月總開支</p>
                             <p id="totalDisplay" class="text-3xl font-bold text-indigo-600">HK$ 0</p>
-                            <div id="memberSummary" class="mt-4 space-y-1 text-sm text-gray-600 border-t pt-2">
-                                <!-- 由 JS 動態生成各人總計 -->
-                            </div>
+                            <div id="memberSummary" class="mt-4 space-y-1 text-sm text-gray-600 border-t pt-2"></div>
                         </div>
                     </div>
 
@@ -84,13 +82,13 @@
                     <div class="glass-card p-6">
                         <div class="flex justify-between items-center mb-4">
                             <h2 class="font-bold">開支明細</h2>
-                            <button onclick="exportExcel('expense')" class="text-xs bg-indigo-50 text-indigo-600 px-3 py-1 rounded-md border">匯出當月 Excel</button>
+                            <button onclick="exportExcel('expense')" class="text-xs bg-indigo-50 text-indigo-600 px-3 py-1 rounded-md border border-indigo-100">匯出 Excel</button>
                         </div>
                         <div class="overflow-x-auto text-sm">
                             <table class="w-full text-left">
                                 <thead class="bg-gray-50 text-gray-400 text-[10px] uppercase tracking-wider">
                                     <tr>
-                                        <th class="py-2 px-2">日期</th>
+                                        <th class="py-2 px-2">日期 (D/M/Y)</th>
                                         <th class="py-2">人物</th>
                                         <th class="py-2">分類</th>
                                         <th class="py-2 text-right">金額</th>
@@ -111,19 +109,19 @@
                 <div class="lg:col-span-1 glass-card p-6 h-fit">
                     <h2 class="text-xl font-semibold mb-4 text-emerald-700">新增存貨</h2>
                     <form id="inventoryForm" class="space-y-4">
-                        <input type="text" id="invName" required class="w-full p-2 border rounded-md" placeholder="物品名稱">
+                        <input type="text" id="invName" required class="w-full p-2 border rounded-md focus:ring-2 focus:ring-emerald-200 outline-none" placeholder="物品名稱">
                         <select id="invLoc" class="w-full p-2 border rounded-md">
                             <option value="廚房">🍳 廚房</option><option value="浴室">🚿 浴室</option>
                             <option value="雪櫃">❄️ 雪櫃</option><option value="儲物櫃">🚪 儲物櫃</option>
-                            <option value="客廳">🛋️ 客廳</option><option value="睡房">🛌 睡房</option>
+                            <option value="客廳">謹 客廳</option><option value="睡房">🛌 睡房</option>
                         </select>
-                        <input type="number" id="invQty" required class="w-full p-2 border rounded-md" placeholder="數量">
-                        <button type="submit" class="w-full bg-emerald-600 text-white py-2 rounded-md hover:bg-emerald-700 transition">加入存貨</button>
+                        <input type="number" id="invQty" required class="w-full p-2 border rounded-md focus:ring-2 focus:ring-emerald-200 outline-none" placeholder="數量">
+                        <button type="submit" class="w-full bg-emerald-600 text-white py-2 rounded-md hover:bg-emerald-700 transition font-bold">加入存貨</button>
                     </form>
                 </div>
                 <div class="lg:col-span-2 glass-card p-6">
                     <div class="flex justify-between items-center mb-4">
-                        <h2 class="font-bold text-gray-700">存貨明細 <span class="text-xs font-normal text-gray-400">(依區域分組，少於 3 件變紅)</span></h2>
+                        <h2 class="font-bold text-gray-700">存貨明細 <span class="text-xs font-normal text-gray-400">(依區域分組)</span></h2>
                         <button onclick="exportExcel('inventory')" class="text-xs bg-emerald-50 text-emerald-600 px-3 py-1 rounded-md border border-emerald-100">匯出 Excel</button>
                     </div>
                     <div id="inventoryContainer"></div>
@@ -166,8 +164,9 @@
         let chartObj = null;
 
         window.onload = () => {
-            // 初始化日期輸入框為今天
-            document.getElementById('expDate').valueAsDate = new Date();
+            // 初始化日期輸入框為今天 (保持 YYYY-MM-DD 格式給瀏覽器元件)
+            const today = new Date();
+            document.getElementById('expDate').valueAsDate = today;
             renderAll();
             if(state.inventory.some(i => i.qty < 3)) {
                 showToast("注意：部分存貨不足 3 件！");
@@ -197,6 +196,8 @@
         document.getElementById('expenseForm').onsubmit = (e) => {
             e.preventDefault();
             const rawDate = document.getElementById('expDate').value; // YYYY-MM-DD
+            if(!rawDate) return;
+
             const newItem = {
                 id: Date.now(),
                 amount: parseFloat(document.getElementById('amount').value),
@@ -204,10 +205,9 @@
                 category: document.getElementById('category').value,
                 note: document.getElementById('note').value || '-',
                 date: rawDate,
-                month: rawDate.slice(0, 7) // 用於過濾的 YYYY-MM
+                month: rawDate.slice(0, 7)
             };
             state.expenses.unshift(newItem);
-            // 新增時自動跳轉到該月份
             currentMonthFilter = newItem.month;
             save(); renderAll(); e.target.reset();
             document.getElementById('expDate').valueAsDate = new Date();
@@ -230,7 +230,7 @@
             };
             state.inventory.unshift(newItem);
             save(); renderAll(); e.target.reset();
-            if(newItem.qty < 3) showToast("警告：新增物品存貨少於 3 件！");
+            if(newItem.qty < 3) showToast("警告：存貨少於 3 件！");
         };
 
         window.updateQty = (id, delta) => {
@@ -238,7 +238,6 @@
             if(item) { 
                 item.qty = Math.max(0, item.qty + delta); 
                 save(); renderAll(); 
-                if(item.qty < 3 && delta < 0) showToast(`${item.name} 庫存即將耗盡！`);
             }
         };
 
@@ -287,7 +286,7 @@
             const ws = XLSX.utils.json_to_sheet(data);
             const wb = XLSX.utils.book_new();
             XLSX.utils.book_append_sheet(wb, ws, "Data");
-            XLSX.writeFile(wb, `${type}_${currentMonthFilter}_${new Date().getTime()}.xlsx`);
+            XLSX.writeFile(wb, `${type}_${currentMonthFilter}.xlsx`);
         };
 
         // --- 渲染 ---
@@ -300,24 +299,22 @@
 
         function renderMonthSelector() {
             const selector = document.getElementById('monthSelector');
-            // 找出所有存在開支的月份，加上當前月份
             const months = new Set(state.expenses.map(i => i.month || i.date.slice(0, 7)));
             months.add(new Date().toISOString().slice(0, 7));
             
             const sortedMonths = Array.from(months).sort().reverse();
             selector.innerHTML = sortedMonths.map(m => `
                 <div onclick="setMonthFilter('${m}')" class="month-pill flex-shrink-0 px-4 py-1 rounded-full text-xs border ${currentMonthFilter === m ? 'active bg-indigo-600 text-white' : 'bg-white text-gray-500'}">
-                    ${m.replace('-', '年')}月
+                    ${m.split('-')[1]}/${m.split('-')[0]}
                 </div>
             `).join('');
-            document.getElementById('selectedMonthTitle').innerText = `${currentMonthFilter.replace('-', '年')}月 總開支`;
+            document.getElementById('selectedMonthTitle').innerText = `${currentMonthFilter.split('-').reverse().join('/')} 總開支`;
         }
 
         function renderExpenseTable() {
             const body = document.getElementById('expenseBody');
             const filtered = state.expenses.filter(i => (i.month || i.date.slice(0, 7)) === currentMonthFilter);
             
-            // 計算各人總額
             const totals = { "A子": 0, "B子": 0, "GULU": 0 };
             filtered.forEach(i => totals[i.member] = (totals[i.member] || 0) + i.amount);
             
@@ -337,10 +334,8 @@
             }
 
             body.innerHTML = filtered.map(i => {
-                // 將 YYYY-MM-DD 轉換為 DD/MM/YYYY
                 const parts = i.date.split('-');
                 const dmy = `${parts[2]}/${parts[1]}/${parts[0]}`;
-                
                 return `
                 <tr class="border-b last:border-0 hover:bg-gray-50 transition">
                     <td class="py-3 px-2 text-[11px] font-medium text-gray-500">${dmy}</td>
@@ -374,7 +369,7 @@
                 html += `
                     <div class="location-group mb-6">
                         <h3 class="location-header font-bold text-gray-800 flex items-center gap-2 text-lg">
-                            ${loc} <span class="text-xs font-normal text-gray-400">(${groups[loc].length} 項)</span>
+                            ${loc} <span class="text-xs font-normal text-gray-400">(${groups[loc].length})</span>
                         </h3>
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                             ${groups[loc].map(i => {
@@ -412,7 +407,6 @@
             if(chartObj) chartObj.destroy();
             const keys = Object.keys(dataMap);
             if(keys.length === 0) {
-                // 如果沒數據，畫一個灰色圓環
                 chartObj = new Chart(ctx, { type: 'doughnut', data: { datasets: [{ data: [1], backgroundColor: ['#e5e7eb'] }] }, options: { cutout: '80%', plugins: { legend: { display: false } } } });
                 return;
             }
