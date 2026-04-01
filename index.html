@@ -12,6 +12,10 @@
         body { font-family: 'Noto Sans TC', sans-serif; background-color: #f3f4f6; }
         .glass-card { background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px); border-radius: 1rem; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); }
         .nav-btn.active { background-color: #4f46e5; color: white; }
+        /* 低庫存警示樣式：少於 3 件觸發 */
+        .low-stock-card { border: 2px solid #fee2e2 !important; background-color: #fffafb !important; }
+        .low-stock-text { color: #dc2626 !important; font-weight: 900 !important; }
+        .location-header { border-left: 4px solid #10b981; padding-left: 0.75rem; margin-top: 1.5rem; margin-bottom: 0.75rem; }
     </style>
 </head>
 <body class="p-4 md:p-8">
@@ -24,8 +28,8 @@
         <!-- 導航列 -->
         <div class="flex justify-center mb-8 gap-2 flex-wrap">
             <button onclick="switchTab('expense')" id="btn-expense" class="nav-btn active px-5 py-2 rounded-full transition font-medium">💰 開支</button>
-            <button onclick="switchTab('inventory')" id="btn-inventory" class="nav-btn px-5 py-2 rounded-full bg-white transition font-medium">📦 存貨</button>
-            <button onclick="switchTab('sync')" id="btn-sync" class="nav-btn px-5 py-2 rounded-full bg-white transition font-medium">🔄 同步中心</button>
+            <button onclick="switchTab('inventory')" id="btn-inventory" class="nav-btn px-5 py-2 rounded-full bg-white transition font-medium text-gray-600">📦 存貨</button>
+            <button onclick="switchTab('sync')" id="btn-sync" class="nav-btn px-5 py-2 rounded-full bg-white transition font-medium text-gray-600">🔄 同步中心</button>
         </div>
 
         <!-- 1. 開支分頁 -->
@@ -64,7 +68,7 @@
                             <h2 class="font-bold">歷史紀錄</h2>
                             <button onclick="exportExcel('expense')" class="text-xs bg-indigo-50 text-indigo-600 px-3 py-1 rounded-md border">匯出 Excel</button>
                         </div>
-                        <div class="overflow-x-auto text-sm">
+                        <div class="overflow-x-auto text-sm text-gray-600">
                             <table class="w-full text-left">
                                 <tbody id="expenseBody"></tbody>
                             </table>
@@ -78,23 +82,24 @@
         <div id="tab-inventory" class="tab-content hidden">
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 <div class="lg:col-span-1 glass-card p-6 h-fit">
-                    <h2 class="text-xl font-semibold mb-4">新增存貨</h2>
+                    <h2 class="text-xl font-semibold mb-4 text-emerald-700">新增存貨</h2>
                     <form id="inventoryForm" class="space-y-4">
                         <input type="text" id="invName" required class="w-full p-2 border rounded-md" placeholder="物品名稱">
                         <select id="invLoc" class="w-full p-2 border rounded-md">
                             <option value="廚房">🍳 廚房</option><option value="浴室">🚿 浴室</option>
                             <option value="雪櫃">❄️ 雪櫃</option><option value="儲物櫃">🚪 儲物櫃</option>
+                            <option value="客廳">🛋️ 客廳</option><option value="睡房">🛌 睡房</option>
                         </select>
                         <input type="number" id="invQty" required class="w-full p-2 border rounded-md" placeholder="數量">
-                        <button type="submit" class="w-full bg-emerald-600 text-white py-2 rounded-md hover:bg-emerald-700">加入存貨</button>
+                        <button type="submit" class="w-full bg-emerald-600 text-white py-2 rounded-md hover:bg-emerald-700 transition">加入存貨</button>
                     </form>
                 </div>
                 <div class="lg:col-span-2 glass-card p-6">
                     <div class="flex justify-between items-center mb-4">
-                        <h2 class="font-bold">存貨明細</h2>
-                        <button onclick="exportExcel('inventory')" class="text-xs bg-emerald-50 text-emerald-600 px-3 py-1 rounded-md border">匯出 Excel</button>
+                        <h2 class="font-bold text-gray-700">存貨明細 <span class="text-xs font-normal text-gray-400">(依區域分組，少於 3 件變紅)</span></h2>
+                        <button onclick="exportExcel('inventory')" class="text-xs bg-emerald-50 text-emerald-600 px-3 py-1 rounded-md border border-emerald-100">匯出 Excel</button>
                     </div>
-                    <div id="inventoryGrid" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
+                    <div id="inventoryContainer"></div>
                 </div>
             </div>
         </div>
@@ -103,27 +108,26 @@
         <div id="tab-sync" class="tab-content hidden">
             <div class="glass-card p-8 max-w-2xl mx-auto text-center">
                 <h2 class="text-2xl font-bold mb-4 text-indigo-600">🔄 家園同步中心</h2>
-                <p class="text-gray-600 mb-6 text-sm">因為這不是正式 App，如果您要在 A子、B子的手機間同步資料，請使用以下代碼：</p>
+                <p class="text-gray-600 mb-6 text-sm">數據儲存在手機瀏覽器中。如需在不同設備間同步，請使用下方代碼：</p>
                 
                 <div class="space-y-6">
-                    <div class="p-4 bg-gray-50 rounded-lg">
-                        <h3 class="font-bold mb-2">步驟 1：輸出資料 (分享給家人)</h3>
-                        <button onclick="generateSyncCode()" class="bg-indigo-600 text-white px-6 py-2 rounded-md mb-2">產生同步代碼</button>
+                    <div class="p-4 bg-gray-50 rounded-lg border">
+                        <h3 class="font-bold mb-2">輸出資料 (分享給家人)</h3>
+                        <button onclick="generateSyncCode()" class="bg-indigo-600 text-white px-6 py-2 rounded-md mb-2 hover:bg-indigo-700 transition">產生並複製代碼</button>
                         <textarea id="syncOutput" readonly class="w-full h-24 p-2 text-xs border rounded-md bg-white mb-2" placeholder="產生的代碼會出現在這裡..."></textarea>
-                        <p class="text-xs text-gray-400">產生後複製這段代碼，傳送到家人的 WhatsApp 紀錄即可。</p>
                     </div>
 
-                    <div class="p-4 bg-gray-50 rounded-lg">
-                        <h3 class="font-bold mb-2">步驟 2：匯入資料 (接收紀錄)</h3>
-                        <textarea id="syncInput" class="w-full h-24 p-2 text-xs border rounded-md bg-white mb-2" placeholder="請將家人傳給您的代碼貼在這裡..."></textarea>
-                        <button onclick="importSyncCode()" class="bg-emerald-600 text-white px-6 py-2 rounded-md">匯入並更新紀錄</button>
+                    <div class="p-4 bg-gray-50 rounded-lg border border-emerald-100">
+                        <h3 class="font-bold mb-2 text-emerald-700">匯入資料 (接收紀錄)</h3>
+                        <textarea id="syncInput" class="w-full h-24 p-2 text-xs border rounded-md bg-white mb-2" placeholder="請貼上家人傳來的代碼..."></textarea>
+                        <button onclick="importSyncCode()" class="bg-emerald-600 text-white px-6 py-2 rounded-md hover:bg-emerald-700 transition">匯入並更新紀錄</button>
                     </div>
                 </div>
             </div>
         </div>
     </div>
 
-    <div id="toast" class="fixed bottom-10 left-1/2 -translate-x-1/2 bg-gray-800 text-white px-6 py-2 rounded-full opacity-0 transition-opacity"></div>
+    <div id="toast" class="fixed bottom-10 left-1/2 -translate-x-1/2 bg-gray-800 text-white px-6 py-2 rounded-full opacity-0 transition-opacity pointer-events-none z-50"></div>
 
     <script>
         // 核心數據
@@ -134,13 +138,22 @@
 
         let chartObj = null;
 
-        window.onload = () => renderAll();
+        window.onload = () => {
+            renderAll();
+            if(state.inventory.some(i => i.qty < 3)) {
+                showToast("注意：部分存貨不足 3 件！");
+            }
+        };
 
         function switchTab(tab) {
             document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
             document.getElementById(`tab-${tab}`).classList.remove('hidden');
-            document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active', 'bg-indigo-600', 'text-white'));
+            document.querySelectorAll('.nav-btn').forEach(b => {
+                b.classList.remove('active', 'bg-indigo-600', 'text-white');
+                b.classList.add('bg-white', 'text-gray-600');
+            });
             const activeBtn = document.getElementById(`btn-${tab}`);
+            activeBtn.classList.remove('bg-white', 'text-gray-600');
             activeBtn.classList.add('active', 'bg-indigo-600', 'text-white');
             if(tab === 'expense') renderChart();
         }
@@ -148,7 +161,7 @@
         function showToast(msg) {
             const t = document.getElementById('toast');
             t.innerText = msg; t.style.opacity = '1';
-            setTimeout(() => t.style.opacity = '0', 2000);
+            setTimeout(() => t.style.opacity = '0', 2500);
         }
 
         // --- 開支邏輯 ---
@@ -164,7 +177,7 @@
             };
             state.expenses.unshift(newItem);
             save(); renderAll(); e.target.reset();
-            showToast("已紀錄！別忘了去同步中心分享代碼");
+            showToast("開支已紀錄");
         };
 
         // --- 存貨邏輯 ---
@@ -178,16 +191,23 @@
             };
             state.inventory.unshift(newItem);
             save(); renderAll(); e.target.reset();
+            if(newItem.qty < 3) showToast("警告：新增物品存貨少於 3 件！");
         };
 
         window.updateQty = (id, delta) => {
             const item = state.inventory.find(i => i.id === id);
-            if(item) { item.qty = Math.max(0, item.qty + delta); save(); renderAll(); }
+            if(item) { 
+                item.qty = Math.max(0, item.qty + delta); 
+                save(); renderAll(); 
+                if(item.qty < 3 && delta < 0) showToast(`${item.name} 庫存即將耗盡！`);
+            }
         };
 
         window.delItem = (type, id) => {
-            state[type] = state[type].filter(x => x.id !== id);
-            save(); renderAll();
+            if(confirm("確定要刪除嗎？")) {
+                state[type] = state[type].filter(x => x.id !== id);
+                save(); renderAll();
+            }
         };
 
         function save() {
@@ -199,13 +219,15 @@
         window.generateSyncCode = () => {
             const code = btoa(unescape(encodeURIComponent(JSON.stringify(state))));
             document.getElementById('syncOutput').value = code;
-            navigator.clipboard.writeText(code);
-            showToast("代碼已複製到剪貼簿！");
+            navigator.clipboard.writeText(code).then(() => {
+                showToast("同步代碼已複製到剪貼簿！");
+            });
         };
 
         window.importSyncCode = () => {
             try {
                 const code = document.getElementById('syncInput').value;
+                if(!code) return;
                 const imported = JSON.parse(decodeURIComponent(escape(atob(code))));
                 if(imported.expenses && imported.inventory) {
                     state = imported;
@@ -213,16 +235,15 @@
                     showToast("同步成功！");
                     document.getElementById('syncInput').value = "";
                 }
-            } catch(e) { alert("無效的同步代碼！"); }
+            } catch(e) { alert("無效的同步代碼，請重新複製。"); }
         };
 
-        // --- 匯出功能 ---
         window.exportExcel = (type) => {
             const data = type === 'expense' ? state.expenses : state.inventory;
             const ws = XLSX.utils.json_to_sheet(data);
             const wb = XLSX.utils.book_new();
-            XLSX.utils.book_append_sheet(wb, ws, "Sheet1");
-            XLSX.writeFile(wb, `${type}_data.xlsx`);
+            XLSX.utils.book_append_sheet(wb, ws, "Data");
+            XLSX.writeFile(wb, `${type}_export_${new Date().getTime()}.xlsx`);
         };
 
         // --- 渲染 ---
@@ -237,51 +258,93 @@
         function renderExpenseTable() {
             const body = document.getElementById('expenseBody');
             body.innerHTML = state.expenses.map(i => `
-                <tr class="border-b">
-                    <td class="py-2">${i.date}</td>
+                <tr class="border-b last:border-0 hover:bg-gray-50 transition">
+                    <td class="py-3 text-gray-400">${i.date}</td>
                     <td class="font-bold text-gray-700">${i.member}</td>
-                    <td><span class="bg-indigo-50 text-indigo-600 px-2 rounded">${i.category}</span></td>
-                    <td class="text-right font-bold">$${i.amount}</td>
+                    <td><span class="bg-indigo-50 text-indigo-600 px-2 py-0.5 rounded-full text-xs">${i.category}</span></td>
+                    <td class="text-right font-bold text-indigo-600">$${i.amount.toLocaleString()}</td>
                     <td class="text-center">
-                        <button onclick="delItem('expenses', ${i.id})" class="text-red-300">🗑️</button>
+                        <button onclick="delItem('expenses', ${i.id})" class="text-red-200 hover:text-red-500 transition">🗑️</button>
                     </td>
                 </tr>
             `).join('');
         }
 
         function renderInventory() {
-            const grid = document.getElementById('inventoryGrid');
-            grid.innerHTML = state.inventory.map(i => `
-                <div class="bg-gray-50 p-4 rounded-lg border">
-                    <div class="flex justify-between text-xs text-emerald-600 mb-1">
-                        <span>${i.location}</span>
-                        <button onclick="delItem('inventory', ${i.id})">❌</button>
-                    </div>
-                    <div class="font-bold text-lg">${i.name}</div>
-                    <div class="flex justify-between items-center mt-2">
-                        <span class="text-2xl font-black">${i.qty}</span>
-                        <div class="flex gap-2">
-                            <button onclick="updateQty(${i.id}, -1)" class="w-8 h-8 bg-white border rounded">-</button>
-                            <button onclick="updateQty(${i.id}, 1)" class="w-8 h-8 bg-emerald-50 text-emerald-600 border rounded">+</button>
+            const container = document.getElementById('inventoryContainer');
+            if (!container) return;
+
+            if (state.inventory.length === 0) {
+                container.innerHTML = `<p class="text-center text-gray-400 py-10">尚無存貨紀錄</p>`;
+                return;
+            }
+
+            // 1. 進行分組
+            const groups = state.inventory.reduce((acc, item) => {
+                const loc = item.location || "未分類";
+                if (!acc[loc]) acc[loc] = [];
+                acc[loc].push(item);
+                return acc;
+            }, {});
+
+            // 2. 依分組渲染 HTML
+            let html = "";
+            const locations = Object.keys(groups).sort(); // 按字母排序區域
+
+            locations.forEach(loc => {
+                html += `
+                    <div class="location-group mb-6">
+                        <h3 class="location-header font-bold text-gray-800 flex items-center gap-2 text-lg">
+                            ${loc} <span class="text-xs font-normal text-gray-400">(${groups[loc].length} 項)</span>
+                        </h3>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            ${groups[loc].map(i => {
+                                const isLow = i.qty < 3;
+                                return `
+                                <div class="glass-card p-4 border-2 transition ${isLow ? 'low-stock-card' : 'border-transparent'}">
+                                    <div class="flex justify-between items-start mb-1">
+                                        <div class="font-bold text-lg text-gray-800">${i.name}</div>
+                                        <button onclick="delItem('inventory', ${i.id})" class="text-gray-300 hover:text-red-400 p-1">❌</button>
+                                    </div>
+                                    <div class="flex justify-between items-center mt-3">
+                                        <span class="text-3xl ${isLow ? 'low-stock-text' : 'text-gray-700'}">${i.qty}</span>
+                                        <div class="flex gap-2">
+                                            <button onclick="updateQty(${i.id}, -1)" class="w-10 h-10 bg-white border rounded-full shadow-sm hover:bg-gray-50 flex items-center justify-center font-bold text-xl">-</button>
+                                            <button onclick="updateQty(${i.id}, 1)" class="w-10 h-10 ${isLow ? 'bg-red-50 text-red-600 border-red-100' : 'bg-emerald-50 text-emerald-600 border-emerald-100'} border rounded-full shadow-sm hover:opacity-80 flex items-center justify-center font-bold text-xl">+</button>
+                                        </div>
+                                    </div>
+                                </div>
+                                `;
+                            }).join('')}
                         </div>
                     </div>
-                </div>
-            `).join('');
+                `;
+            });
+
+            container.innerHTML = html;
         }
 
         function renderChart() {
-            const ctx = document.getElementById('expenseChart').getContext('2d');
+            const canvas = document.getElementById('expenseChart');
+            if(!canvas) return;
+            const ctx = canvas.getContext('2d');
             const dataMap = {};
             state.expenses.forEach(i => dataMap[i.category] = (dataMap[i.category] || 0) + i.amount);
             if(chartObj) chartObj.destroy();
-            if(Object.keys(dataMap).length === 0) return;
+            const keys = Object.keys(dataMap);
+            if(keys.length === 0) return;
             chartObj = new Chart(ctx, {
                 type: 'doughnut',
                 data: {
-                    labels: Object.keys(dataMap),
+                    labels: keys,
                     datasets: [{ data: Object.values(dataMap), backgroundColor: ['#6366f1','#ec4899','#10b981','#f59e0b','#3b82f6','#ef4444'] }]
                 },
-                options: { plugins: { legend: { display: false } }, cutout: '70%' }
+                options: { 
+                    plugins: { legend: { display: false } }, 
+                    cutout: '75%',
+                    responsive: true,
+                    maintainAspectRatio: false
+                }
             });
         }
     </script>
