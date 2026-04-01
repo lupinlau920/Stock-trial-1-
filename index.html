@@ -16,9 +16,11 @@
         .low-stock-card { border: 2px solid #fee2e2 !important; background-color: #fffafb !important; }
         .low-stock-text { color: #dc2626 !important; font-weight: 900 !important; }
         .location-header { border-left: 4px solid #10b981; padding-left: 0.75rem; margin-top: 1.5rem; margin-bottom: 0.75rem; }
+        .month-pill { cursor: pointer; transition: all 0.2s; }
+        .month-pill.active { background-color: #4f46e5; color: white; }
     </style>
 </head>
-<body class="p-4 md:p-8">
+<body class="p-4 md:p-8 text-gray-800">
     <div class="max-w-5xl mx-auto">
         <header class="mb-6 text-center">
             <h1 class="text-3xl font-bold text-indigo-600">日常管家系統</h1>
@@ -35,9 +37,11 @@
         <!-- 1. 開支分頁 -->
         <div id="tab-expense" class="tab-content">
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <!-- 新增開支表單 -->
                 <div class="lg:col-span-1 glass-card p-6 h-fit">
                     <h2 class="text-xl font-semibold mb-4">新增支出</h2>
                     <form id="expenseForm" class="space-y-4">
+                        <input type="date" id="expDate" required class="w-full p-2 border rounded-md">
                         <input type="number" id="amount" required step="0.1" class="w-full p-2 border rounded-md" placeholder="金額 (HKD)">
                         <select id="member" class="w-full p-2 border rounded-md">
                             <option value="A子">👤 A子</option>
@@ -51,26 +55,49 @@
                             <option value="其他">✨ 其他</option>
                         </select>
                         <input type="text" id="note" class="w-full p-2 border rounded-md" placeholder="備註">
-                        <button type="submit" class="w-full bg-indigo-600 text-white py-2 rounded-md hover:bg-indigo-700">紀錄支出</button>
+                        <button type="submit" class="w-full bg-indigo-600 text-white py-2 rounded-md hover:bg-indigo-700 transition">紀錄支出</button>
                     </form>
                 </div>
+
+                <!-- 數據查核與歷史 -->
                 <div class="lg:col-span-2 space-y-6">
+                    <!-- 月份選擇器 -->
+                    <div class="glass-card p-4 overflow-x-auto">
+                        <div class="flex items-center gap-2" id="monthSelector">
+                            <!-- 由 JS 動態生成月份按鈕 -->
+                        </div>
+                    </div>
+
+                    <!-- 總額概覽 -->
                     <div class="glass-card p-6 flex flex-col md:flex-row items-center gap-6">
                         <div class="w-full md:w-1/2 h-48"><canvas id="expenseChart"></canvas></div>
                         <div class="w-full md:w-1/2 text-center md:text-left">
-                            <p class="text-sm text-gray-500">本月總開支</p>
+                            <p id="selectedMonthTitle" class="text-sm text-gray-500 font-bold">本月總開支</p>
                             <p id="totalDisplay" class="text-3xl font-bold text-indigo-600">HK$ 0</p>
-                            <div id="memberSummary" class="mt-2 text-xs italic text-gray-500"></div>
+                            <div id="memberSummary" class="mt-4 space-y-1 text-sm text-gray-600 border-t pt-2">
+                                <!-- 由 JS 動態生成各人總計 -->
+                            </div>
                         </div>
                     </div>
+
+                    <!-- 歷史紀錄 -->
                     <div class="glass-card p-6">
                         <div class="flex justify-between items-center mb-4">
-                            <h2 class="font-bold">歷史紀錄</h2>
-                            <button onclick="exportExcel('expense')" class="text-xs bg-indigo-50 text-indigo-600 px-3 py-1 rounded-md border">匯出 Excel</button>
+                            <h2 class="font-bold">開支明細</h2>
+                            <button onclick="exportExcel('expense')" class="text-xs bg-indigo-50 text-indigo-600 px-3 py-1 rounded-md border">匯出當月 Excel</button>
                         </div>
-                        <div class="overflow-x-auto text-sm text-gray-600">
+                        <div class="overflow-x-auto text-sm">
                             <table class="w-full text-left">
-                                <tbody id="expenseBody"></tbody>
+                                <thead class="bg-gray-50 text-gray-400 text-[10px] uppercase tracking-wider">
+                                    <tr>
+                                        <th class="py-2 px-2">日期</th>
+                                        <th class="py-2">人物</th>
+                                        <th class="py-2">分類</th>
+                                        <th class="py-2 text-right">金額</th>
+                                        <th class="py-2 text-center">操作</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="expenseBody" class="text-gray-600"></tbody>
                             </table>
                         </div>
                     </div>
@@ -109,18 +136,16 @@
             <div class="glass-card p-8 max-w-2xl mx-auto text-center">
                 <h2 class="text-2xl font-bold mb-4 text-indigo-600">🔄 家園同步中心</h2>
                 <p class="text-gray-600 mb-6 text-sm">數據儲存在手機瀏覽器中。如需在不同設備間同步，請使用下方代碼：</p>
-                
-                <div class="space-y-6">
+                <div class="space-y-6 text-left">
                     <div class="p-4 bg-gray-50 rounded-lg border">
                         <h3 class="font-bold mb-2">輸出資料 (分享給家人)</h3>
                         <button onclick="generateSyncCode()" class="bg-indigo-600 text-white px-6 py-2 rounded-md mb-2 hover:bg-indigo-700 transition">產生並複製代碼</button>
                         <textarea id="syncOutput" readonly class="w-full h-24 p-2 text-xs border rounded-md bg-white mb-2" placeholder="產生的代碼會出現在這裡..."></textarea>
                     </div>
-
                     <div class="p-4 bg-gray-50 rounded-lg border border-emerald-100">
                         <h3 class="font-bold mb-2 text-emerald-700">匯入資料 (接收紀錄)</h3>
                         <textarea id="syncInput" class="w-full h-24 p-2 text-xs border rounded-md bg-white mb-2" placeholder="請貼上家人傳來的代碼..."></textarea>
-                        <button onclick="importSyncCode()" class="bg-emerald-600 text-white px-6 py-2 rounded-md hover:bg-emerald-700 transition">匯入並更新紀錄</button>
+                        <button onclick="importSyncCode()" class="bg-emerald-600 text-white px-6 py-2 rounded-md hover:bg-emerald-700 transition w-full">匯入並更新紀錄</button>
                     </div>
                 </div>
             </div>
@@ -136,9 +161,13 @@
             inventory: JSON.parse(localStorage.getItem('gulu_inventory')) || []
         };
 
+        // 當前過濾月份 (格式: YYYY-MM)
+        let currentMonthFilter = new Date().toISOString().slice(0, 7);
         let chartObj = null;
 
         window.onload = () => {
+            // 初始化日期輸入框為今天
+            document.getElementById('expDate').valueAsDate = new Date();
             renderAll();
             if(state.inventory.some(i => i.qty < 3)) {
                 showToast("注意：部分存貨不足 3 件！");
@@ -155,7 +184,7 @@
             const activeBtn = document.getElementById(`btn-${tab}`);
             activeBtn.classList.remove('bg-white', 'text-gray-600');
             activeBtn.classList.add('active', 'bg-indigo-600', 'text-white');
-            if(tab === 'expense') renderChart();
+            if(tab === 'expense') renderAll();
         }
 
         function showToast(msg) {
@@ -167,18 +196,28 @@
         // --- 開支邏輯 ---
         document.getElementById('expenseForm').onsubmit = (e) => {
             e.preventDefault();
+            const rawDate = document.getElementById('expDate').value; // YYYY-MM-DD
             const newItem = {
                 id: Date.now(),
                 amount: parseFloat(document.getElementById('amount').value),
                 member: document.getElementById('member').value,
                 category: document.getElementById('category').value,
                 note: document.getElementById('note').value || '-',
-                date: new Date().toLocaleDateString('zh-HK')
+                date: rawDate,
+                month: rawDate.slice(0, 7) // 用於過濾的 YYYY-MM
             };
             state.expenses.unshift(newItem);
+            // 新增時自動跳轉到該月份
+            currentMonthFilter = newItem.month;
             save(); renderAll(); e.target.reset();
+            document.getElementById('expDate').valueAsDate = new Date();
             showToast("開支已紀錄");
         };
+
+        function setMonthFilter(month) {
+            currentMonthFilter = month;
+            renderAll();
+        }
 
         // --- 存貨邏輯 ---
         document.getElementById('inventoryForm').onsubmit = (e) => {
@@ -220,7 +259,7 @@
             const code = btoa(unescape(encodeURIComponent(JSON.stringify(state))));
             document.getElementById('syncOutput').value = code;
             navigator.clipboard.writeText(code).then(() => {
-                showToast("同步代碼已複製到剪貼簿！");
+                showToast("同步代碼已複製！");
             });
         };
 
@@ -235,51 +274,93 @@
                     showToast("同步成功！");
                     document.getElementById('syncInput').value = "";
                 }
-            } catch(e) { alert("無效的同步代碼，請重新複製。"); }
+            } catch(e) { alert("代碼無效。"); }
         };
 
         window.exportExcel = (type) => {
-            const data = type === 'expense' ? state.expenses : state.inventory;
+            let data = [];
+            if (type === 'expense') {
+                data = state.expenses.filter(i => (i.month || i.date.slice(0, 7)) === currentMonthFilter);
+            } else {
+                data = state.inventory;
+            }
             const ws = XLSX.utils.json_to_sheet(data);
             const wb = XLSX.utils.book_new();
             XLSX.utils.book_append_sheet(wb, ws, "Data");
-            XLSX.writeFile(wb, `${type}_export_${new Date().getTime()}.xlsx`);
+            XLSX.writeFile(wb, `${type}_${currentMonthFilter}_${new Date().getTime()}.xlsx`);
         };
 
         // --- 渲染 ---
         function renderAll() {
+            renderMonthSelector();
             renderExpenseTable();
             renderInventory();
             renderChart();
-            const total = state.expenses.reduce((s, i) => s + i.amount, 0);
-            document.getElementById('totalDisplay').innerText = `HK$ ${total.toLocaleString()}`;
+        }
+
+        function renderMonthSelector() {
+            const selector = document.getElementById('monthSelector');
+            // 找出所有存在開支的月份，加上當前月份
+            const months = new Set(state.expenses.map(i => i.month || i.date.slice(0, 7)));
+            months.add(new Date().toISOString().slice(0, 7));
+            
+            const sortedMonths = Array.from(months).sort().reverse();
+            selector.innerHTML = sortedMonths.map(m => `
+                <div onclick="setMonthFilter('${m}')" class="month-pill flex-shrink-0 px-4 py-1 rounded-full text-xs border ${currentMonthFilter === m ? 'active bg-indigo-600 text-white' : 'bg-white text-gray-500'}">
+                    ${m.replace('-', '年')}月
+                </div>
+            `).join('');
+            document.getElementById('selectedMonthTitle').innerText = `${currentMonthFilter.replace('-', '年')}月 總開支`;
         }
 
         function renderExpenseTable() {
             const body = document.getElementById('expenseBody');
-            body.innerHTML = state.expenses.map(i => `
+            const filtered = state.expenses.filter(i => (i.month || i.date.slice(0, 7)) === currentMonthFilter);
+            
+            // 計算各人總額
+            const totals = { "A子": 0, "B子": 0, "GULU": 0 };
+            filtered.forEach(i => totals[i.member] = (totals[i.member] || 0) + i.amount);
+            
+            const grandTotal = Object.values(totals).reduce((a, b) => a + b, 0);
+            document.getElementById('totalDisplay').innerText = `HK$ ${grandTotal.toLocaleString()}`;
+            
+            document.getElementById('memberSummary').innerHTML = Object.entries(totals).map(([name, val]) => `
+                <div class="flex justify-between">
+                    <span>${name}</span>
+                    <span class="font-bold">$${val.toLocaleString()}</span>
+                </div>
+            `).join('');
+
+            if (filtered.length === 0) {
+                body.innerHTML = `<tr><td colspan="5" class="py-10 text-center text-gray-400">該月份無紀錄</td></tr>`;
+                return;
+            }
+
+            body.innerHTML = filtered.map(i => {
+                // 將 YYYY-MM-DD 轉換為 DD/MM/YYYY
+                const parts = i.date.split('-');
+                const dmy = `${parts[2]}/${parts[1]}/${parts[0]}`;
+                
+                return `
                 <tr class="border-b last:border-0 hover:bg-gray-50 transition">
-                    <td class="py-3 text-gray-400">${i.date}</td>
-                    <td class="font-bold text-gray-700">${i.member}</td>
-                    <td><span class="bg-indigo-50 text-indigo-600 px-2 py-0.5 rounded-full text-xs">${i.category}</span></td>
+                    <td class="py-3 px-2 text-[11px] font-medium text-gray-500">${dmy}</td>
+                    <td class="font-bold">${i.member}</td>
+                    <td><span class="bg-indigo-50 text-indigo-600 px-2 py-0.5 rounded-full text-[10px]">${i.category}</span></td>
                     <td class="text-right font-bold text-indigo-600">$${i.amount.toLocaleString()}</td>
                     <td class="text-center">
-                        <button onclick="delItem('expenses', ${i.id})" class="text-red-200 hover:text-red-500 transition">🗑️</button>
+                        <button onclick="delItem('expenses', ${i.id})" class="text-gray-300 hover:text-red-500 px-2">🗑️</button>
                     </td>
                 </tr>
-            `).join('');
+            `}).join('');
         }
 
         function renderInventory() {
             const container = document.getElementById('inventoryContainer');
             if (!container) return;
-
             if (state.inventory.length === 0) {
                 container.innerHTML = `<p class="text-center text-gray-400 py-10">尚無存貨紀錄</p>`;
                 return;
             }
-
-            // 1. 進行分組
             const groups = state.inventory.reduce((acc, item) => {
                 const loc = item.location || "未分類";
                 if (!acc[loc]) acc[loc] = [];
@@ -287,10 +368,8 @@
                 return acc;
             }, {});
 
-            // 2. 依分組渲染 HTML
             let html = "";
-            const locations = Object.keys(groups).sort(); // 按字母排序區域
-
+            const locations = Object.keys(groups).sort();
             locations.forEach(loc => {
                 html += `
                     <div class="location-group mb-6">
@@ -320,7 +399,6 @@
                     </div>
                 `;
             });
-
             container.innerHTML = html;
         }
 
@@ -328,16 +406,21 @@
             const canvas = document.getElementById('expenseChart');
             if(!canvas) return;
             const ctx = canvas.getContext('2d');
+            const filtered = state.expenses.filter(i => (i.month || i.date.slice(0, 7)) === currentMonthFilter);
             const dataMap = {};
-            state.expenses.forEach(i => dataMap[i.category] = (dataMap[i.category] || 0) + i.amount);
+            filtered.forEach(i => dataMap[i.category] = (dataMap[i.category] || 0) + i.amount);
             if(chartObj) chartObj.destroy();
             const keys = Object.keys(dataMap);
-            if(keys.length === 0) return;
+            if(keys.length === 0) {
+                // 如果沒數據，畫一個灰色圓環
+                chartObj = new Chart(ctx, { type: 'doughnut', data: { datasets: [{ data: [1], backgroundColor: ['#e5e7eb'] }] }, options: { cutout: '80%', plugins: { legend: { display: false } } } });
+                return;
+            }
             chartObj = new Chart(ctx, {
                 type: 'doughnut',
                 data: {
                     labels: keys,
-                    datasets: [{ data: Object.values(dataMap), backgroundColor: ['#6366f1','#ec4899','#10b981','#f59e0b','#3b82f6','#ef4444'] }]
+                    datasets: [{ data: Object.values(dataMap), backgroundColor: ['#6366f1','#ec4899','#10b981','#f59e0b','#3b82f6','#ef4444','#8b5cf6'] }]
                 },
                 options: { 
                     plugins: { legend: { display: false } }, 
