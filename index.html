@@ -20,7 +20,7 @@
         .location-header { border-left: 4px solid #10b981; padding-left: 0.75rem; margin-top: 1.5rem; margin-bottom: 0.75rem; }
         .month-pill { cursor: pointer; transition: all 0.2s; }
         .month-pill.active { background-color: #4f46e5; color: white; }
-        #reader { width: 100%; border-radius: 10px; overflow: hidden; }
+        #reader { width: 100%; border-radius: 10px; overflow: hidden; background: #000; }
     </style>
 </head>
 <body class="p-4 md:p-8 text-gray-800">
@@ -130,29 +130,45 @@
         <!-- 3. 同步中心分頁 -->
         <div id="tab-sync" class="tab-content hidden">
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <!-- 輸出數據 (QR Code) -->
+                <!-- 輸出數據 -->
                 <div class="glass-card p-6 text-center">
-                    <h2 class="text-xl font-bold mb-4 text-indigo-600">📱 產生同步代碼</h2>
-                    <p class="text-xs text-gray-500 mb-4">點擊產生 QR Code，讓家人掃描</p>
-                    <button onclick="generateSyncQR()" class="bg-indigo-600 text-white px-6 py-2 rounded-md mb-4 w-full font-bold">產生並顯示 QR Code</button>
-                    <div id="qrcode" class="flex justify-center mb-4 bg-white p-2 rounded-lg border inline-block mx-auto"></div>
-                    <textarea id="syncOutput" readonly class="w-full h-20 p-2 text-[10px] border rounded-md bg-gray-50 mb-2" placeholder="同步代碼會顯示在此..."></textarea>
-                    <button onclick="copySyncCode()" class="text-xs text-indigo-600 underline">複製文字代碼</button>
+                    <h2 class="text-xl font-bold mb-4 text-indigo-600">📱 傳出數據</h2>
+                    <div class="space-y-3">
+                        <button onclick="generateSyncQR()" class="bg-indigo-600 text-white px-6 py-2 rounded-md w-full font-bold">產生同步 QR Code</button>
+                        <div id="qrcode" class="flex justify-center bg-white p-2 rounded-lg border inline-block mx-auto min-h-[200px]"></div>
+                        <div class="border-t pt-4">
+                            <p class="text-xs text-gray-400 mb-2">或者傳送文字代碼：</p>
+                            <textarea id="syncOutput" readonly class="w-full h-16 p-2 text-[10px] border rounded-md bg-gray-50 mb-2" placeholder="同步代碼..."></textarea>
+                            <button onclick="copySyncCode()" class="text-xs text-indigo-600 underline">複製文字代碼</button>
+                        </div>
+                    </div>
                 </div>
 
-                <!-- 匯入數據 (掃描) -->
+                <!-- 匯入數據 (含上傳功能) -->
                 <div class="glass-card p-6 text-center">
-                    <h2 class="text-xl font-bold mb-4 text-emerald-700">🔍 掃描同步</h2>
-                    <p class="text-xs text-gray-500 mb-4">開啟相機掃描家人的 QR Code</p>
-                    <div id="reader" class="mb-4"></div>
-                    <div class="flex gap-2 mb-4">
-                        <button id="startScanBtn" onclick="startScanner()" class="flex-1 bg-emerald-600 text-white py-2 rounded-md font-bold">開啟相機</button>
-                        <button id="stopScanBtn" onclick="stopScanner()" class="hidden flex-1 bg-red-500 text-white py-2 rounded-md font-bold">關閉相機</button>
-                    </div>
-                    <div class="border-t pt-4 mt-4">
-                        <p class="text-xs text-gray-500 mb-2">或手動貼上文字代碼：</p>
-                        <textarea id="syncInput" class="w-full h-20 p-2 text-[10px] border rounded-md mb-2" placeholder="請在此貼上代碼..."></textarea>
-                        <button onclick="importSyncCode()" class="w-full bg-emerald-100 text-emerald-700 py-2 rounded-md text-sm font-bold">手動匯入更新</button>
+                    <h2 class="text-xl font-bold mb-4 text-emerald-700">📥 匯入數據</h2>
+                    
+                    <!-- 掃描與圖片上傳區 -->
+                    <div class="space-y-4">
+                        <div id="reader" class="mb-2"></div>
+                        <div class="flex gap-2">
+                            <button id="startScanBtn" onclick="startScanner()" class="flex-1 bg-emerald-600 text-white py-2 rounded-md font-bold text-sm">開啟相機掃描</button>
+                            <button id="stopScanBtn" onclick="stopScanner()" class="hidden flex-1 bg-red-500 text-white py-2 rounded-md font-bold text-sm">關閉相機</button>
+                        </div>
+                        
+                        <div class="relative group">
+                            <input type="file" id="qrFileInput" accept="image/*" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer" onchange="uploadQR(event)">
+                            <div class="border-2 border-dashed border-emerald-200 rounded-lg py-4 bg-emerald-50 group-hover:bg-emerald-100 transition">
+                                <p class="text-emerald-700 text-sm font-medium">📤 上傳 QR Code 圖片</p>
+                                <p class="text-[10px] text-emerald-500">選取手機中的截圖進行匯入</p>
+                            </div>
+                        </div>
+
+                        <div class="border-t pt-4">
+                            <p class="text-xs text-gray-500 mb-2">手動貼上代碼：</p>
+                            <textarea id="syncInput" class="w-full h-16 p-2 text-[10px] border rounded-md mb-2" placeholder="貼上家人分享的代碼..."></textarea>
+                            <button onclick="importSyncCode()" class="w-full bg-emerald-100 text-emerald-700 py-2 rounded-md text-sm font-bold">確認匯入數據</button>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -195,21 +211,14 @@
             setTimeout(() => t.style.opacity = '0', 2500);
         }
 
-        // --- 同步邏輯 (QR Code & Scan) ---
+        // --- 同步核心邏輯 ---
         function generateSyncQR() {
             const code = btoa(unescape(encodeURIComponent(JSON.stringify(state))));
             document.getElementById('syncOutput').value = code;
-            
             const qrContainer = document.getElementById('qrcode');
-            qrContainer.innerHTML = ""; // 清空舊的
-            
+            qrContainer.innerHTML = "";
             new QRCode(qrContainer, {
-                text: code,
-                width: 200,
-                height: 200,
-                colorDark : "#4f46e5",
-                colorLight : "#ffffff",
-                correctLevel : QRCode.CorrectLevel.L // 數據量大建議用 L 增加容量
+                text: code, width: 200, height: 200, colorDark : "#4f46e5", colorLight : "#ffffff", correctLevel : QRCode.CorrectLevel.L
             });
             showToast("QR Code 已產生");
         }
@@ -220,28 +229,17 @@
             navigator.clipboard.writeText(code).then(() => showToast("文字代碼已複製"));
         }
 
+        // 相機掃描
         function startScanner() {
-            const readerEl = document.getElementById('reader');
             html5QrCode = new Html5Qrcode("reader");
-            
             document.getElementById('startScanBtn').classList.add('hidden');
             document.getElementById('stopScanBtn').classList.remove('hidden');
-
             const config = { fps: 10, qrbox: { width: 250, height: 250 } };
-
-            html5QrCode.start(
-                { facingMode: "environment" }, 
-                config,
-                (decodedText) => {
-                    document.getElementById('syncInput').value = decodedText;
-                    stopScanner();
-                    importSyncCode();
-                },
-                (errorMessage) => { /* 忽略掃描中的錯誤 */ }
-            ).catch(err => {
-                alert("無法啟動相機: " + err);
+            html5QrCode.start({ facingMode: "environment" }, config, (text) => {
+                document.getElementById('syncInput').value = text;
                 stopScanner();
-            });
+                importSyncCode();
+            }).catch(err => { alert("相機啟動失敗: " + err); stopScanner(); });
         }
 
         function stopScanner() {
@@ -253,28 +251,50 @@
             }
         }
 
+        // 上傳 QR Code 圖片功能
+        function uploadQR(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            const html5QrCodeFile = new Html5Qrcode("reader");
+            html5QrCodeFile.scanFile(file, true)
+                .then(decodedText => {
+                    document.getElementById('syncInput').value = decodedText;
+                    importSyncCode();
+                })
+                .catch(err => {
+                    alert("無法讀取該圖片中的 QR Code，請確認圖片清晰。");
+                });
+            event.target.value = ""; // 重置 input
+        }
+
         window.importSyncCode = () => {
             try {
                 const code = document.getElementById('syncInput').value;
                 if(!code) return;
                 const imported = JSON.parse(decodeURIComponent(escape(atob(code))));
                 if(imported.expenses) { 
-                    state = imported; 
-                    save(); 
-                    renderAll(); 
-                    showToast("數據同步成功！"); 
-                    document.getElementById('syncInput').value = "";
+                    if(confirm("即將覆蓋本地數據，確定匯入嗎？")) {
+                        state = imported; 
+                        save(); 
+                        renderAll(); 
+                        showToast("✅ 數據匯入成功！"); 
+                        document.getElementById('syncInput').value = "";
+                    }
                 }
             } catch(e) { 
-                alert("無效的同步代碼或 QR Code 數據錯誤"); 
+                alert("錯誤：無效的數據格式！"); 
             }
         };
 
-        // --- 基礎邏輯 ---
+        // --- 數據處理邏輯 ---
+        function save() {
+            localStorage.setItem('gulu_expenses', JSON.stringify(state.expenses));
+            localStorage.setItem('gulu_inventory', JSON.stringify(state.inventory));
+        }
+
         document.getElementById('expenseForm').onsubmit = (e) => {
             e.preventDefault();
-            const rawDate = document.getElementById('expDate').value; 
-            if(!rawDate) return;
+            const rawDate = document.getElementById('expDate').value;
             const newItem = {
                 id: Date.now(),
                 amount: parseFloat(document.getElementById('amount').value),
@@ -315,11 +335,6 @@
             }
         };
 
-        function save() {
-            localStorage.setItem('gulu_expenses', JSON.stringify(state.expenses));
-            localStorage.setItem('gulu_inventory', JSON.stringify(state.inventory));
-        }
-
         function setMonthFilter(month) {
             currentMonthFilter = month;
             renderAll();
@@ -333,6 +348,7 @@
             XLSX.writeFile(wb, `${type}_${currentMonthFilter}.xlsx`);
         };
 
+        // --- 畫面渲染邏輯 ---
         function renderAll() {
             renderMonthSelector();
             renderExpenseTable();
@@ -367,14 +383,8 @@
             }
             body.innerHTML = filtered.map(i => {
                 const [y, m, d] = i.date.split('-');
-                return `
-                <tr class="border-b last:border-0 hover:bg-gray-50 transition">
-                    <td class="py-3 px-2 text-[11px] font-bold text-gray-500">${d}/${m}/${y}</td>
-                    <td class="font-bold">${i.member}</td>
-                    <td><span class="bg-indigo-50 text-indigo-600 px-2 py-0.5 rounded-full text-[10px]">${i.category}</span></td>
-                    <td class="text-right font-bold text-indigo-600">$${i.amount.toLocaleString()}</td>
-                    <td class="text-center"><button onclick="delItem('expenses', ${i.id})" class="text-gray-300 hover:text-red-500">🗑️</button></td>
-                </tr>`}).join('');
+                return `<tr class="border-b last:border-0 hover:bg-gray-50 transition"><td class="py-3 px-2 text-[11px] font-bold text-gray-500">${d}/${m}/${y}</td><td class="font-bold">${i.member}</td><td><span class="bg-indigo-50 text-indigo-600 px-2 py-0.5 rounded-full text-[10px]">${i.category}</span></td><td class="text-right font-bold text-indigo-600">$${i.amount.toLocaleString()}</td><td class="text-center"><button onclick="delItem('expenses', ${i.id})" class="text-gray-300 hover:text-red-500">🗑️</button></td></tr>`
+            }).join('');
         }
 
         function renderInventory() {
@@ -390,16 +400,7 @@
                 <div class="mb-6">
                     <h3 class="location-header font-bold text-gray-800 text-lg">${loc}</h3>
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        ${groups[loc].map(i => `
-                            <div class="glass-card p-4 border-2 ${i.qty < 3 ? 'low-stock-card' : 'border-transparent'}">
-                                <div class="flex justify-between items-center"><span class="font-bold">${i.name}</span><button onclick="delItem('inventory', ${i.id})" class="text-gray-300">❌</button></div>
-                                <div class="flex justify-between items-center mt-3"><span class="text-3xl font-black ${i.qty < 3 ? 'low-stock-text' : ''}">${i.qty}</span>
-                                    <div class="flex gap-2">
-                                        <button onclick="updateQty(${i.id}, -1)" class="w-10 h-10 bg-white border rounded-full">-</button>
-                                        <button onclick="updateQty(${i.id}, 1)" class="w-10 h-10 bg-indigo-50 text-indigo-600 border rounded-full">+</button>
-                                    </div>
-                                </div>
-                            </div>`).join('')}
+                        ${groups[loc].map(i => `<div class="glass-card p-4 border-2 ${i.qty < 3 ? 'low-stock-card' : 'border-transparent'}"><div class="flex justify-between items-center"><span class="font-bold">${i.name}</span><button onclick="delItem('inventory', ${i.id})" class="text-gray-300">❌</button></div><div class="flex justify-between items-center mt-3"><span class="text-3xl font-black ${i.qty < 3 ? 'low-stock-text' : ''}">${i.qty}</span><div class="flex gap-2"><button onclick="updateQty(${i.id}, -1)" class="w-10 h-10 bg-white border rounded-full">-</button><button onclick="updateQty(${i.id}, 1)" class="w-10 h-10 bg-indigo-50 text-indigo-600 border rounded-full">+</button></div></div></div>`).join('')}
                     </div>
                 </div>`).join('');
         }
